@@ -1,10 +1,14 @@
 # exit on error
 #set -e
 
-while getopts "dg:ps:" opt; do
+while getopts "dg:ps:e:" opt; do
   case ${opt} in
     d ) 
       just_deploy=yes
+      ;;
+    e ) # process option a
+      existingdb=yes
+      db_name=$OPTARG
       ;;
     s ) # process option a
       create_sqlserver=yes
@@ -18,7 +22,7 @@ while getopts "dg:ps:" opt; do
       ;;
     \? )
       echo "Unknown arg"
-      echo "Usage: cmd <-g group_name> [-s sql_passwd] [-p (create plan)] website_name"
+      echo "Usage: cmd <-g group_name> [-e db_name (use existing db)] [-s sql_passwd (create server)] [-p (create plan)] website_name"
       ;; 
   esac 
 done
@@ -26,7 +30,7 @@ done
 shift $((OPTIND -1))
 
 if [ $# -ne 1  ] || [ -z "$group_name" ]; then
-   echo "Usage: cmd <-g group_name> [-s sql_passwd] [-p (create plan)] website_name"
+   echo "Usage: cmd <-g group_name> [-e db_name (use existing db)] [-s sql_passwd (create server)] [-p (create plan)] website_name"
    exit
 fi
 
@@ -56,27 +60,44 @@ if [ ! "$just_deploy" ]; then
   az webapp create -n ${site_name} -g ${group_name} --plan ${plan_name} >/dev/null
   echo "Setting Java version..."
   az webapp config set -n ${site_name} -g ${group_name} --java-version "1.8" --java-container "Tomcat" --java-container-version "8.5" >/dev/null
-  echo "Create website DB...."
-  az sql db create --server ${sqlserver_name} -g ${group_name} -n ${site_name}  >/dev/null
+  
+  if  [ -z "${db_name}" ]; then
+    db_name="${site_name}db"
+    echo "Create website DB...."
+    az sql db create --server ${sqlserver_name} -g ${group_name} -n ${db_name}  >/dev/null
+  fi
+
   echo "Adding DB Connection String to webapp settings...."
-  sql_connectionstring=$(az sql db show-connection-string -s ${sqlserver_name} -c jdbc -otsv | sed -e "s/<username>/${sql_username}/" -e "s/<password>/${sql_passwd}/" -e "s/<databasename>/${site_name}/")
-  az webapp config appsettings set -n ${site_name} -g ${group_name} --settings JDBC_URL="${sql_connectionstring}"
+  if [ -z "${sql_passwd}" ]; then
+    read -s -r -p "Enter SQL Server password: " sql_passwd
+  fi
+  sql_connectionstring=$(az sql db show-connection-string -s ${sqlserver_name} -c jdbc -otsv | sed -e "s/<username>/${sql_username}/" -e "s/<password>/${sql_passwd}/" -e "s/<databasename>/${db_name}/")
+  az webapp config appsettings set -n ${site_name} -g ${group_name} --settings JDBC_URL="${sql_connectionstring}" >/dev/null
 
-  echo "Whitelisting website IP addresses on DB firewall...."
-  webapp_ips=$(az webapp show -n ${site_name} -g ${group_name} --query "outboundIpAddresses" -otsv)
-  for webapp_ip in ${webapp_ips//,/ }; do
-    az sql server firewall-rule create -g ${group_name} -n "${site_name}${webapp_ip}" -s ${sqlserver_name} --start-ip-address ${webapp_ip} --end-ip-address ${webapp_ip}  >/dev/null
-  done
-
+  if [ "$create_plan" ]; then
+    echo "Whitelisting the plan website IP addresses on DB firewall...."
+    webapp_ips=$(az webapp show -n ${site_name} -g ${group_name} --query "outboundIpAddresses" -otsv)
+    for webapp_ip in ${webapp_ips//,/ }; do
+      az sql server firewall-rule create -g ${group_name} -n "${site_name}${webapp_ip}" -s ${sqlserver_name} --start-ip-address ${webapp_ip} --end-ip-address ${webapp_ip}  >/dev/null
+    done
+  fi
 fi
 
 echo "Deploy website ${web_name}..."
-(
-    cd springbackend
-    zip ../springbackend_deploy.zip ./web.config  ./target/springbackend-0.0.1-SNAPSHOT.jar
-)
-az webapp deployment source config-zip -n ${site_name} -g ${group_name} --src ./springbackend_deploy.zip >/dev/null
+read -r -p "Have you build your apps (npm run-script build &&  ./mvnw package -Dmaven.test.skip=true) [y/N] " response
+response=${response,,}    # tolower
+if [[ "$response" =~ ^(yes|y)$ ]]; then
+  tmp_dir=./_deploy_temp export tmp_dir
+  rm -r $tmp_dir
+  mkdir $tmp_dir
+  cp ./springbackend/web.config  ./springbackend/target/springbackend-0.0.1-SNAPSHOT.jar $tmp_dir
+  cp -r ./frontend/build/* $tmp_dir
+  (
+    cd $tmp_dir
+    zip -r ./springbackend_deploy.zip *
+  )
 
-echo "Done"
+  az webapp deployment source config-zip -n ${site_name} -g ${group_name} --src ./$tmp_dir/springbackend_deploy.zip 
 
-
+  echo "Done"
+fi
