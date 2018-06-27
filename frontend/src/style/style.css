@@ -1,0 +1,23 @@
+body {
+    font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+li {list-style-type: none;}
+
+.todo-list .checkbox input[type=checkbox] {
+    margin: 0;
+}
+
+input.form-control {
+    border: 1px solid #ddd;
+    box-shadow: none;
+    height: 46px;
+}
+
+.input-group-btn .btn {
+    height: 46px;
+}
+
+.todo-list .fa-trash {
+    color: #444444;
+}

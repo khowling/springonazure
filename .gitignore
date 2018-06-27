@@ -31,3 +31,7 @@
 */.mvn
 */.settings
 */.project
+*/env.sh
+
+*/node_modules/**
+*/*-lock.json
