@@ -35,3 +35,4 @@
 
 */node_modules/**
 */*-lock.json
+_deploy_temp
