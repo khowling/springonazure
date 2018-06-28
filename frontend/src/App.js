@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
+import { AppInsights } from 'applicationinsights-js'; 
 import './style/style.css';
 import './style/lumino.css';
+
 
 
 
@@ -10,6 +12,9 @@ class App extends Component {
     super(props);
     this.state = {people: []}
     this.input = React.createRef();
+    if (!AppInsights.config) { 
+			AppInsights.downloadAndSetup({instrumentationKey:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx'});
+		} 
   }
   
 
@@ -66,7 +71,7 @@ class App extends Component {
           console.log (`non 200 err : ${r.status}`)
           return reject(r.status)
         } else {
-          if (r.status == 204 && type == 'DELETE') {
+          if (r.status === 204 && type === 'DELETE') {
             return resolve();
           } else {
             r.json().then(rjson => {
@@ -96,7 +101,7 @@ class App extends Component {
             { this.state.error && 
             <div className="alert bg-danger" role="alert">
               <em className="fa fa-lg fa-warning">&nbsp;</em>Backend error : {this.state.error} 
-              <a href="#" className="pull-right"><em className="fa fa-lg fa-close"></em></a></div>
+              <a  className="pull-right"><em className="fa fa-lg fa-close"></em></a></div>
             }
           </div>
         </div>

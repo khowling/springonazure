@@ -72,7 +72,7 @@ if [ ! "$just_deploy" ]; then
     read -s -r -p "Enter SQL Server password: " sql_passwd
   fi
   sql_connectionstring=$(az sql db show-connection-string -s ${sqlserver_name} -c jdbc -otsv | sed -e "s/<username>/${sql_username}/" -e "s/<password>/${sql_passwd}/" -e "s/<databasename>/${db_name}/")
-  az webapp config appsettings set -n ${site_name} -g ${group_name} --settings JDBC_URL="${sql_connectionstring}" >/dev/null
+  az webapp config appsettings set -n ${site_name} -g ${group_name} --settings JDBC_URL="${sql_connectionstring}"
 
   if [ "$create_plan" ]; then
     echo "Whitelisting the plan website IP addresses on DB firewall...."
