@@ -1,2 +1,3 @@
 springbackend
 frontend
+!springbackend/target/*.jar
