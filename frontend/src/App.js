@@ -97,7 +97,7 @@ class App extends Component {
       <div className="container">
         <div className="row">
           <div className="col-lg-12">
-            <h1 className="page-header">People Demo</h1>
+            <h1 className="page-header">People Demo Testing</h1>
             { this.state.error && 
             <div className="alert bg-danger" role="alert">
               <em className="fa fa-lg fa-warning">&nbsp;</em>Backend error : {this.state.error} 
