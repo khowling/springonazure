@@ -141,7 +141,7 @@ class App extends Component {
               <div className="panel-footer">
                 <div className="input-group">
                   <input type="text" className="form-control input-md" placeholder="First name" ref={this.input}/><span className="input-group-btn">
-                    <button className="btn btn-primary btn-md" onClick={this.add.bind(this)} >Add</button>
+                    <button className="btn btn-primary btn-md" onClick={this.add.bind(this)} >add</button>
                 </span></div>
               </div>
             </div>
