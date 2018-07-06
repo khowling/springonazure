@@ -13,7 +13,7 @@ class App extends Component {
     this.state = {people: []}
     this.input = React.createRef();
     if (!AppInsights.config) { 
-			AppInsights.downloadAndSetup({instrumentationKey:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx'});
+			AppInsights.downloadAndSetup({instrumentationKey: process.env.REACT_APP_AI_KEY});
 		} 
   }
   
@@ -57,6 +57,7 @@ class App extends Component {
       let opts = {
         crossDomain:true,
         method: type,
+        credentials: 'same-origin'
       }
       if (body) {
         opts.body = body
